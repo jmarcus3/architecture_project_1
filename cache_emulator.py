@@ -31,7 +31,8 @@ class Address:
             padding = '0' * (32-len(binary_address))
         else:
             padding = ''
-        self.address = padding + binary_address         
+        self.address = padding + binary_address                 
+        self.dec_address = address
 
     def get_offset(self):        
         return self.address[32-offset_size:32]
@@ -43,6 +44,9 @@ class Address:
 
     def get_tag(self):
         return self.address[:tag_size]
+
+    def get_decimal_address(self):
+        return self.dec_address
 
 
 class DataBlock:
@@ -67,6 +71,29 @@ class DataBlock:
     def __repr__(self):
         return self.block.__repr__()
 
+class Ram:
+    def __init__(self):
+        self.memory = {}
+
+    def set_block(self, address, value):
+        block_address = address.get_decimal_address()//block_size_bytes
+        if block_address in self.memory:
+            self.memory[block_address].set_data(address, value)
+        else:
+            block = DataBlock()
+            block.set_data(address, value)
+            self.memory[block_address] = block
+
+    def get_block(self, address):
+        block_address = address.get_decimal_address()//block_size_bytes
+        if block_address not in self.memory:
+            raise KeyError("Address has not been initialized in Ram")
+        return self.memory[block_address]
+
+    def __repr__(self):
+        return self.memory.__repr__()
+
+
 
 
 def main():
@@ -76,8 +103,18 @@ def main():
     print(f"offset is: {a.get_offset()}")
     print(f"tag is: {a.get_tag()}")
 
-    b = DataBlock()
-    b.set_data(a, 30)
-    print(b)
+    #aa = Address(572)
+    #b = Address(32154)
+    #bb = Address(32155)
+
+    #ram = Ram()
+    #ram.set_block(a, 30)
+    #ram.set_block(aa, 31)
+    #ram.set_block(b, 21)
+    #ram.set_block(bb, 25)
+    #print(ram)
+
+
+
 if __name__ == '__main__':
     main()
