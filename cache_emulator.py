@@ -193,20 +193,124 @@ class Cpu:
     def __init__(self):
         ram = Ram()
         self.cache = Cache(ram)
+        self.instruction_count = 0
 
     def load_double(self, address):
         return self.cache.get_double(address)
+        self.instruction_count += 1
 
     def store_double(self, address, double):
         self.cache.set_double(address, double)
+        self.instruction_count += 1
 
-    def add_double(self, address1, address2):
-        return self.load_double(address1) + self.load_double(address2)
+    def add_double(self, value1, value2):
+        return value1 + value2
+        self.instruction_count += 1
 
-    def mult_double(self, address1, address2):
-        return self.load_double(address1) * self.load_double(address2)
+    def mult_double(self, value1, value2):
+        return value1 * value2
+        self.instruction_count += 1
+
+######################TEST ALGORITHMS###############################################
+
+def dot_product(address_array1, address_array2, address_array3, cpu):
+    for a, b, c in zip(address_array1, address_array2, address_array3):
+        register1 = cpu.load_double(a)
+        register2 = cpu.load_double(b)
+        register3 = cpu.mult_double(register1, register2)
+        cpu.store_double(c, register3)
+    print(f'total instructions: {cpu.instruction_count}')
+    print(f'read_hits = {cpu.cache.read_hit}')
+    print(f'write_hits = {cpu.cache.write_hit}')
+    print(f'read_misses = {cpu.cache.read_miss}')
+    print(f'write_misses = {cpu.cache.write_miss}')
+
+def matrix_matrix(address_array1, address_array2, address_array3, cpu):    
+    address_matrix1 = []
+    address_matrix2 = []
+    address_matrix3 = []    
+    
+    a = 0
+    b = 0
+    c = 0
+
+    for i in range(100):
+        new = []
+        address_matrix1.append(new)
+        for j in range(125):
+           address_matrix1[i].append(address_array1[a])
+           a += 1
+
+    for k in range(125):
+        new2 = []
+        address_matrix2.append(new2)
+        for l in range(100):
+            address_matrix2[k].append(address_array2[b])
+            b += 1
+
+    for i in range(100):
+        new3 = []
+        address_matrix3.append(new3)
+        for j in range(100):
+            address_matrix3[i].append(address_array3[c])
+            c += 1
 
 
+    for i in range(100):
+        for j in range(100):
+            register4 = 0
+            for k in range(125):
+                register1 = cpu.load_double(address_matrix1[i][k])
+                register2 = cpu.load_double(address_matrix2[k][j])
+                register3 = cpu.mult_double(register1, register2)
+                register4 = cpu.add_double(register4, register3)
+            cpu.store_double(address_matrix3[i][j], register4)
+
+    print(f'total instructions: {cpu.instruction_count}')
+    print(f'read_hits = {cpu.cache.read_hit}')
+    print(f'write_hits = {cpu.cache.write_hit}')
+    print(f'read_misses = {cpu.cache.read_miss}')
+    print(f'write_misses = {cpu.cache.write_miss}')
+
+
+def matrix_matrix_blocking(address_array1, address_array2, address_array3, cpu):    
+    address_matrix1 = []
+    address_matrix2 = []
+    address_matrix3 = []    
+    
+    a = 0
+    b = 0
+    c = 0
+
+    for i in range(100):
+        new = []
+        address_matrix1.append(new)
+        for j in range(125):
+           address_matrix1[i].append(address_array1[a])
+           a += 1
+
+    for k in range(125):
+        new2 = []
+        address_matrix2.append(new2)
+        for l in range(100):
+            address_matrix2[k].append(address_array2[b])
+            b += 1
+
+    for i in range(100):
+        new3 = []
+        address_matrix3.append(new3)
+        for j in range(100):
+            address_matrix3[i].append(address_array3[c])
+            c += 1
+
+
+    print(f'total instructions: {cpu.instruction_count}')
+    print(f'read_hits = {cpu.cache.read_hit}')
+    print(f'write_hits = {cpu.cache.write_hit}')
+    print(f'read_misses = {cpu.cache.read_miss}')
+    print(f'write_misses = {cpu.cache.write_miss}')
+
+############################MAIN##########################################################
 def main():
     cpu = Cpu()
     address_array1 = [] #takes array of addresses
@@ -226,14 +330,45 @@ def main():
         address = Address(c)
         address_array3.append(address)
 
-    #dot product:
-    for i, a in enumerate(address_array1):
-        cpu.store_double(address_array3[i], cpu.mult_double(a, address_array2[i]))
-        
-    print(f'read_hits = {cpu.cache.read_hit}')
-    print(f'write_hits = {cpu.cache.write_hit}')
-    print(f'read_misses = {cpu.cache.read_miss}')
-    print(f'write_misses = {cpu.cache.write_miss}')
+    #dot_product(address_array1, address_array2, address_array3, cpu)
+    matrix_matrix(address_array1, address_array2, address_array3, cpu)
+
+
+
+    # for a in range(0, 48, 8):
+    #     address = Address(a)
+    #     address_array1.append(address)
+    #     #cpu.store_double(address, random.randint(0,20))
+    # for b in range(48, 96, 8):
+    #     address = Address(b)
+    #     address_array2.append(address)
+    #     #cpu.store_double(address, random.randint(0, 20))
+    # for c in range(96, 144, 8):
+    #     address = Address(c)
+    #     address_array3.append(address)
+
+    # val = 1
+    # for a in address_array1:
+    #     cpu.store_double(a, val)
+    #     val += 1
+    # val2 = 7
+    # for b in address_array2:
+    #     cpu.store_double(b, val2)
+    #     val2 += 1
+
+
+
+
+
+    # print(f'read_hits = {cpu.cache.read_hit}')
+    # print(f'write_hits = {cpu.cache.write_hit}')
+    # print(f'read_misses = {cpu.cache.read_miss}')
+    # print(f'write_misses = {cpu.cache.write_miss}')
+    #print(cpu.cache.cache)
+
+    #matrix multiplication no blocking:
+
+
 
 
 
