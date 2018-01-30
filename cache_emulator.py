@@ -1,30 +1,67 @@
-from math import log as log
-from collections import deque as deque
+from math import log #as log
+from collections import deque #as deque
 import random
+from sys import argv
+
+################THIS CODE SNIPPET FOR COMMAND TAKING LINE ARGUMENTS CAME FROM################
+################https://gist.github.com/dideler/2395703######################################
+
+opts = {}  # Empty dictionary to store key-value pairs.
+while argv:  # While there are arguments left to parse...
+    if argv[0][0] == '-':  # Found a "-name value" pair.
+        opts[argv[0]] = argv[1]  # Add key and value to the dictionary.
+    argv = argv[1:]  # Reduce the argument list by copying it starting from index 1.
+
+#############################################################################################
+#############################################################################################
 
 #block size:
-block_size_bytes = 64 #to take command line argument, default for now
-#print(f"block size is {block_size_bytes} bytes")
+if '-b' in opts:
+    block_size_bytes = int(opts['-b']) 
+else:
+    block_size_bytes = 64 #default
+print(f"block size: {block_size_bytes} bytes")
 
 #cache size:
-cache_size_bytes = 65536 #to take command line argument, default for now
-cache_size_blocks = cache_size_bytes/block_size_bytes
-#print(f"cache size is {cache_size_bytes} bytes")
-#print(f"cache size is {cache_size_blocks} blocks")
+if '-c' in opts:
+    cache_size_bytes = int(opts['-c'])
+else:
+    cache_size_bytes = 65536 #default
+cache_size_blocks = int(cache_size_bytes/block_size_bytes)
+print(f"cache size: {cache_size_bytes} bytes")
+print(f"cache size: {cache_size_blocks} blocks")
 
 #set size:
-blocks_per_set = 2
-#print(f"number of blocks per set is {blocks_per_set}")
+if '-n' in opts:
+    blocks_per_set = int(opts['-n'])
+else:
+    blocks_per_set = 2 #default 
 cache_size_sets = int(cache_size_blocks/blocks_per_set)
-#print(f"cache size is {cache_size_sets} sets")
+print(f"associativity: {blocks_per_set}")
+print(f"number of sets in cache: {cache_size_sets} sets")
+
+#replacement policy:
+if '-r' in opts:
+    replacement_policy = opts['-r']    
+else:
+    replacement_policy = 'LRU' #default
+print(f"replacement policy: {replacement_policy}")
+
+#algorithm:
+if '-a' in opts:
+    algorithm = opts['-a']
+else:
+    algorithm = 'mxm' #default
+print(f"algorithm: {algorithm}")
+print()
+print()
 
 #index, offset, and tag sizes:
 index_size = int(log(cache_size_sets, 2))
 offset_size = int(log(block_size_bytes, 2))
 tag_size = 32 - index_size - offset_size
 
-#replacement policy:
-replacement_policy = 'LRU'
+
 
 ######################ADDRESS CLASS################################################
 #byte address
@@ -213,59 +250,102 @@ class Cpu:
 
 ######################TEST ALGORITHMS###############################################
 
-def dot_product(address_array1, address_array2, address_array3, cpu):
+def dot_product(vector1, vector2, cpu):
+    vector_length = len(vector1)
+    address_array1 = []
+    address_array2 = []
+    address_array3 = []
+
+    for i in range(vector_length):
+        address_array1.append(Address(i * 8))
+        cpu.store_double(address_array1[i], vector1[i])
+
+    j = 0
+    for i in range(vector_length, vector_length * 2):
+        address_array2.append(Address(i * 8))    
+        cpu.store_double(address_array2[j], vector2[j])
+        j += 1
+
+    for i in range(vector_length * 2, vector_length * 3):
+        address_array3.append(Address(i * 8))
+
     for a, b, c in zip(address_array1, address_array2, address_array3):
         register1 = cpu.load_double(a)
         register2 = cpu.load_double(b)
         register3 = cpu.mult_double(register1, register2)
         cpu.store_double(c, register3)
+
+    # solution = []
+    # for c in address_array3:
+    #     solution.append(cpu.load_double(c))
+
+    # print(solution)
+
     print(f'total instructions: {cpu.instruction_count}')
     print(f'read_hits = {cpu.cache.read_hit}')
     print(f'write_hits = {cpu.cache.write_hit}')
     print(f'read_misses = {cpu.cache.read_miss}')
     print(f'write_misses = {cpu.cache.write_miss}')
 
-def matrix_matrix(address_array1, address_array2, address_array3, cpu):    
+
+
+def matrix_matrix(matrix1, matrix2, cpu):    
+    matrix1_rows = len(matrix1)
+    matrix1_columns = len(matrix1[0])
+    matrix2_rows = len(matrix2)
+    matrix2_columns = len(matrix2[0])
+
     address_matrix1 = []
     address_matrix2 = []
     address_matrix3 = []    
     
     a = 0
-    b = 0
-    c = 0
 
-    for i in range(100):
+    for i in range(matrix1_rows):
         new = []
         address_matrix1.append(new)
-        for j in range(125):
-           address_matrix1[i].append(address_array1[a])
-           a += 1
+        for j in range(matrix1_columns):
+           address_matrix1[i].append(Address(a))
+           cpu.store_double(address_matrix1[i][j], matrix1[i][j])
+           a += 8
 
-    for k in range(125):
-        new2 = []
-        address_matrix2.append(new2)
-        for l in range(100):
-            address_matrix2[k].append(address_array2[b])
-            b += 1
+    for i in range(matrix2_rows):
+        new = []
+        address_matrix2.append(new)
+        for j in range(matrix2_columns):
+            address_matrix2[i].append(Address(a))
+            cpu.store_double(address_matrix2[i][j], matrix2[i][j])
+            a += 8
 
-    for i in range(100):
-        new3 = []
-        address_matrix3.append(new3)
-        for j in range(100):
-            address_matrix3[i].append(address_array3[c])
-            c += 1
+    for i in range(matrix1_rows):
+        new = []
+        address_matrix3.append(new)
+        for j in range(matrix2_columns):
+            address_matrix3[i].append(Address(a))
+            cpu.store_double(address_matrix3[i][j], 0)
+            a += 8
 
 
-    for i in range(100):
-        for j in range(100):
+    for i in range(matrix1_rows):
+        for j in range(matrix2_columns):
             register4 = 0
-            for k in range(125):
+            for k in range(matrix1_columns):
                 register1 = cpu.load_double(address_matrix1[i][k])
                 register2 = cpu.load_double(address_matrix2[k][j])
                 register3 = cpu.mult_double(register1, register2)
                 register4 = cpu.add_double(register4, register3)
             cpu.store_double(address_matrix3[i][j], register4)
 
+    # solution = []
+    # for i in range(matrix1_rows):
+    #     new = []
+    #     solution.append(new)
+    #     for j in range(matrix2_columns):
+    #         solution[i].append(cpu.load_double(address_matrix3[i][j]))
+
+    # print(solution)
+
+
     print(f'total instructions: {cpu.instruction_count}')
     print(f'read_hits = {cpu.cache.read_hit}')
     print(f'write_hits = {cpu.cache.write_hit}')
@@ -273,36 +353,63 @@ def matrix_matrix(address_array1, address_array2, address_array3, cpu):
     print(f'write_misses = {cpu.cache.write_miss}')
 
 
-def matrix_matrix_blocking(address_array1, address_array2, address_array3, cpu):    
+def do_block(si, sj, sk, address_matrix1, address_matrix2, address_matrix3, blocksize, cpu):
+    for i in range(si, si+blocksize):
+        for j in range(sj, sj + blocksize):
+            cij = cpu.load_double(address_matrix3[i][j])
+            for k in range(sk, sk+ blocksize):
+                cij += cpu.mult_double(cpu.load_double(address_matrix1[i][k]), cpu.load_double(address_matrix2[k][j]))
+            cpu.store_double(address_matrix3[i][j], cij)
+
+def matrix_matrix_blocking(matrix1, matrix2, blocksize, cpu):    
+    matrix1_rows = len(matrix1)
+    matrix1_columns = len(matrix1[0])
+    matrix2_rows = len(matrix2)
+    matrix2_columns = len(matrix2[0])
+
     address_matrix1 = []
     address_matrix2 = []
     address_matrix3 = []    
     
     a = 0
-    b = 0
-    c = 0
 
-    for i in range(100):
+    for i in range(matrix1_rows):
         new = []
         address_matrix1.append(new)
-        for j in range(125):
-           address_matrix1[i].append(address_array1[a])
-           a += 1
+        for j in range(matrix1_columns):
+           address_matrix1[i].append(Address(a))
+           cpu.store_double(address_matrix1[i][j], matrix1[i][j])
+           a += 8
 
-    for k in range(125):
-        new2 = []
-        address_matrix2.append(new2)
-        for l in range(100):
-            address_matrix2[k].append(address_array2[b])
-            b += 1
+    for i in range(matrix2_rows):
+        new = []
+        address_matrix2.append(new)
+        for j in range(matrix2_columns):
+            address_matrix2[i].append(Address(a))
+            cpu.store_double(address_matrix2[i][j], matrix2[i][j])
+            a += 8
 
-    for i in range(100):
-        new3 = []
-        address_matrix3.append(new3)
-        for j in range(100):
-            address_matrix3[i].append(address_array3[c])
-            c += 1
+    for i in range(matrix1_rows):
+        new = []
+        address_matrix3.append(new)
+        for j in range(matrix2_columns):
+            address_matrix3[i].append(Address(a))
+            cpu.store_double(address_matrix3[i][j], 0)
+            a += 8
 
+    for sj in range(0, matrix1_rows, blocksize):
+        for si in range(0, matrix1_rows, blocksize):
+            for sk in range(0, matrix1_rows, blocksize):
+                do_block(si, sj, sk, address_matrix1, address_matrix2, address_matrix3, blocksize, cpu)
+
+    # solution = []
+    # for i in range(matrix1_rows):
+    #     new = []
+    #     solution.append(new)
+    #     for j in range(matrix2_columns):
+    #         solution[i].append(cpu.load_double(address_matrix3[i][j]))
+
+    # print(solution)
 
     print(f'total instructions: {cpu.instruction_count}')
     print(f'read_hits = {cpu.cache.read_hit}')
@@ -313,112 +420,56 @@ def matrix_matrix_blocking(address_array1, address_array2, address_array3, cpu):
 ############################MAIN##########################################################
 def main():
     cpu = Cpu()
-    address_array1 = [] #takes array of addresses
-    address_array2 = [] #takes different array of addresses
-    address_array3 = [] #takes array of address for dot products
-    
-    #loading doubles:
-    for a in range(0, 100000, 8):
-        address = Address(a)
-        address_array1.append(address)
-        cpu.store_double(address, random.randint(0,20))
-    for b in range(100000, 200000, 8):
-        address = Address(b)
-        address_array2.append(address)
-        cpu.store_double(address, random.randint(0, 20))
-    for c in range(200000, 300000, 8):
-        address = Address(c)
-        address_array3.append(address)
 
-    #dot_product(address_array1, address_array2, address_array3, cpu)
-    matrix_matrix(address_array1, address_array2, address_array3, cpu)
+    if algorithm == 'dot':
+        vector1 = []
+        vector2 = []
+        for a in range(0, 100000):
+            vector1.append(random.randint(0,100))
+            vector2.append(random.randint(0,100))
+        dot_product(vector1, vector2, cpu)
 
+    elif algorithm == 'mxm':
+        matrix1 = []
+        matrix2 = []
+        x = 1 
+        for i in range(16):
+            new = []
+            matrix1.append(new)
+            for j in range(16):
+                matrix1[i].append(x)
+                x += 1
+        for i in range(16):
+            new = []
+            matrix2.append(new)
+            for j in range(16):
+                matrix2[i].append(x)
+                x += 1
 
+        matrix_matrix(matrix1, matrix2, cpu)
 
-    # for a in range(0, 48, 8):
-    #     address = Address(a)
-    #     address_array1.append(address)
-    #     #cpu.store_double(address, random.randint(0,20))
-    # for b in range(48, 96, 8):
-    #     address = Address(b)
-    #     address_array2.append(address)
-    #     #cpu.store_double(address, random.randint(0, 20))
-    # for c in range(96, 144, 8):
-    #     address = Address(c)
-    #     address_array3.append(address)
+    elif algorithm == 'mxm_block':
+        matrix1 = []
+        matrix2 = []
+        x = 1 
+        for i in range(128):
+            new = []
+            matrix1.append(new)
+            for j in range(128):
+                matrix1[i].append(x)
+                x += 1
+        for i in range(128):
+            new = []
+            matrix2.append(new)
+            for j in range(128):
+                matrix2[i].append(x)
+                x += 1
+        matrix_matrix_blocking(matrix1, matrix2, 32, cpu)
 
-    # val = 1
-    # for a in address_array1:
-    #     cpu.store_double(a, val)
-    #     val += 1
-    # val2 = 7
-    # for b in address_array2:
-    #     cpu.store_double(b, val2)
-    #     val2 += 1
+    else:
+        raise ValueError('algorithm must be dot, mxm, or mxm_block')
 
-
-
-
-
-    # print(f'read_hits = {cpu.cache.read_hit}')
-    # print(f'write_hits = {cpu.cache.write_hit}')
-    # print(f'read_misses = {cpu.cache.read_miss}')
-    # print(f'write_misses = {cpu.cache.write_miss}')
-    #print(cpu.cache.cache)
-
-    #matrix multiplication no blocking:
-
-
-
-
-
-    """a = Address(0)
-    #print("for address 0")
-    #print(f"ram address is {a.address}")
-    #print(f"cache index is {a.get_index()}")
-    #print(f"offset is: {a.get_offset()}")
-    #print(f"tag is: {a.get_tag()}")
-  
-
-    block = DataBlock()
-    #print(block)
-
-    aa = Address(8)
-    aaa = Address(16)
-    aaaa = Address(24)
-    b = Address(4096)
-    bb = Address(4104)
-    cc = Address(65536)
-    dd = Address(65536*2)
-
-    ram = Ram()
-    #ram.set_block(a, 1)
-    #print(ram.get_block(a))
-    #ram.set_block(aa, 2)
-    #ram.set_block(aaa, 3)
-    #ram.set_block(aaaa, 4)
-    #ram.set_block(b, 64)
-    #ram.set_block(bb,72)
-    #print(ram)
-
-    cache = Cache(ram)
-    cache.set_double(a, 3)
-    cache.set_double(a, 4)
-    cache.set_double(aa, 5)
-    cache.set_double(cc, 1)
-    cache.set_double(dd, 999)
-
-    cpu = Cpu(cache, ram)
-    print(cache.cache['000000000'])
-    print(f'write hits: {cache.write_hit}')
-    print(f'write misses: {cache.write_miss}')
-    print(f'get address 0: {cache.get_double(a)}')
-    print(cache.cache['000000000'])
-    print(f'read hits: {cache.read_hit}')
-    print(f'read miss: {cache.read_miss}')
-    print(f'4+5: {cpu.add_double(a, aa)}')
-    #print(cache.cache)
-    #print(f"lru_cache: {cache.lru_cache['000000000']}")"""
+    print(cpu.cache.cache)         
 
 if __name__ == '__main__':
     main()
