@@ -233,20 +233,23 @@ class Cpu:
         self.instruction_count = 0
 
     def load_double(self, address):
-        return self.cache.get_double(address)
         self.instruction_count += 1
+        return self.cache.get_double(address)
+        
 
     def store_double(self, address, double):
         self.cache.set_double(address, double)
         self.instruction_count += 1
 
     def add_double(self, value1, value2):
-        return value1 + value2
         self.instruction_count += 1
+        return value1 + value2
+        
 
     def mult_double(self, value1, value2):
-        return value1 * value2
         self.instruction_count += 1
+        return value1 * value2
+        
 
 ######################TEST ALGORITHMS###############################################
 
@@ -433,16 +436,16 @@ def main():
         matrix1 = []
         matrix2 = []
         x = 1 
-        for i in range(16):
+        for i in range(128):
             new = []
             matrix1.append(new)
-            for j in range(16):
+            for j in range(128):
                 matrix1[i].append(x)
                 x += 1
-        for i in range(16):
+        for i in range(128):
             new = []
             matrix2.append(new)
-            for j in range(16):
+            for j in range(128):
                 matrix2[i].append(x)
                 x += 1
 
@@ -468,8 +471,7 @@ def main():
 
     else:
         raise ValueError('algorithm must be dot, mxm, or mxm_block')
-
-    print(cpu.cache.cache)         
+      
 
 if __name__ == '__main__':
     main()
