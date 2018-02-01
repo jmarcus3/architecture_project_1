@@ -80,7 +80,10 @@ class Address:
 
 
     def get_index(self):
-        return self.address[32-offset_size-index_size:32-offset_size] 
+        if index_size == 0:
+            return '0'
+        else:            
+            return self.address[32-offset_size-index_size:32-offset_size] 
         #bin(int((self.address//block_size_bytes) % cache_size_sets))[2:]
 
     def get_tag(self):
@@ -150,7 +153,7 @@ class Cache:
         self.ram = ram
         for i in range(cache_size_sets):
             bini = bin(i)[2:]
-            if len(bini) < index_size:
+            if len(bini) < index_size and index_size != 0:
                 padding = '0' * (index_size - len(bini))
             else:
                 padding = ''
@@ -436,16 +439,16 @@ def main():
         matrix1 = []
         matrix2 = []
         x = 1 
-        for i in range(128):
+        for i in range(64):
             new = []
             matrix1.append(new)
-            for j in range(128):
+            for j in range(64):
                 matrix1[i].append(x)
                 x += 1
-        for i in range(128):
+        for i in range(64):
             new = []
             matrix2.append(new)
-            for j in range(128):
+            for j in range(64):
                 matrix2[i].append(x)
                 x += 1
 
@@ -455,16 +458,16 @@ def main():
         matrix1 = []
         matrix2 = []
         x = 1 
-        for i in range(128):
+        for i in range(64):
             new = []
             matrix1.append(new)
-            for j in range(128):
+            for j in range(64):
                 matrix1[i].append(x)
                 x += 1
-        for i in range(128):
+        for i in range(64):
             new = []
             matrix2.append(new)
-            for j in range(128):
+            for j in range(64):
                 matrix2[i].append(x)
                 x += 1
         matrix_matrix_blocking(matrix1, matrix2, 32, cpu)
